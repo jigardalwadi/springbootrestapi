@@ -5,6 +5,7 @@ import com.practice.entity.Employee;
 import com.practice.repositary.EmployeeRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -35,7 +36,8 @@ public class EmployeeService {
 
     /*get an employee by id*/
     public Employee findOne(Long empid) {
-        return employeeRepository.findOne(empid);
+        Optional<S> one = employeeRepository.findOne(empid);
+        return one;
     }
 
 

@@ -1,75 +1,93 @@
+
 package com.practice;
 
-import com.jayway.jsonpath.DocumentContext;
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
-import com.practice.EmployeeApplication;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.entity.Employee;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.util.Date;
-import java.util.TimeZone;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
-import static com.jayway.jsonpath.JsonPath.parse;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = EmployeeApplication.class, webEnvironment = RANDOM_PORT)
+@SpringBootTest(classes = EmployeeApplication.class)
+@WebAppConfiguration
+@ActiveProfiles
 public class EmployeeTest {
 
+    private MockMvc mvc;
+
     @Autowired
-    private TestRestTemplate restTemplate;
-    Employee employee = new Employee(1l, "name", "ceo", "nothing", new Date());
+    WebApplicationContext webApplicationContext;
 
     @Before
-    public void setUp() throws Exception {
-        MysqlDataSource dataSource = new MysqlDataSource();
-        dataSource.setUrl("spring.datasource.url");
-
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    public void setUp() {
+        mvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
     }
 
     @Test
-    public void testCreate(){
-        ResponseEntity<String> responseEntity = restTemplate.postForEntity("/company/employees",employee,String.class);
-        assertThat(responseEntity.getStatusCode()).isEqualByComparingTo(HttpStatus.OK);
+    public void testGetAll() throws Exception {
 
-        DocumentContext createJson = parse(responseEntity.getBody());
-        assertThat(createJson.read("$.id",Long.class)).isEqualTo(employee.getId());
-        assertThat(createJson.read("$.name",String.class)).isEqualTo(employee.getName());
-        assertThat(createJson.read("$.designation",String.class)).isEqualTo(employee.getDesignation());
-        assertThat(createJson.read("$.expertise",String.class)).isEqualTo(employee.getExpertise());
+        MvcResult mvcResult =
+                mvc.perform(MockMvcRequestBuilders
+                        .get("/company/employees/{id}", 3)
+                        .accept(MediaType.APPLICATION_JSON))
+                        .andDo(print())
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.id", is(3)))
+                        .andReturn();
+        int status = mvcResult.getResponse().getStatus();
+        assertEquals(200, status);
+
+
+    }
+    @Test
+    public void deleteEmployeeAPI() throws Exception
+    {
+        mvc.perform( MockMvcRequestBuilders.delete("company/employees/{id}", 3l) )
+        ;
     }
 
 
     @Test
-    public void testGet(){
-        Long id = createTimeEntry();
-        ResponseEntity<String> responseEntity = restTemplate.getForEntity("/company/employees/" +id,String.class);
-        assertThat(responseEntity.getStatusCode()).isEqualByComparingTo(HttpStatus.OK);
+    public void testAddEmployee() throws Exception {
+        Employee employee = new Employee(3l, "jigar", "java", "mockito", new Date());
 
-        DocumentContext createJson = parse(responseEntity.getBody());
-        assertThat(createJson.read("$.id",Long.class)).isEqualTo(employee.getId());
-        assertThat(createJson.read("$.name",String.class)).isEqualTo(employee.getName());
-        assertThat(createJson.read("$.designation",String.class)).isEqualTo(employee.getDesignation());
-        assertThat(createJson.read("$.expertise",String.class)).isEqualTo(employee.getExpertise());
+        MvcResult mvcResult =
+                mvc.perform(MockMvcRequestBuilders
+                        .post("/company/employee/")
+                        .content(asJsonString(employee))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                        .andDo(print())
+                        .andReturn();
     }
-    private Long createTimeEntry() {
-        HttpEntity<Employee> entity = new HttpEntity(employee);
 
-        ResponseEntity<Employee> response = restTemplate.exchange("/company/employees", HttpMethod.POST, entity, Employee.class);
+    public static String asJsonString(final Object obj) {
+        try {
+            return new ObjectMapper().writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        return response.getBody().getId();
-    }
-}
+    }}
