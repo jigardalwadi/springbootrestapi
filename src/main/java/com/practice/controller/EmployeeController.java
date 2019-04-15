@@ -36,13 +36,13 @@ public class EmployeeController {
 
 
     @GetMapping("/employees")
-    public List<Employee> getAllEmployees(){
+    public List<Employee> findAll(){
         return employeeService.findAll();
     }
 
     /*get employee by empid*/
     @GetMapping("/employees/{id}")
-    public ResponseEntity<Employee> getEmployeeById(@PathVariable(value="id") Long empid){
+    public ResponseEntity<Employee> findOne(@PathVariable(value="id") Long empid){
 
         Employee emp= employeeService.findOne(empid);
 

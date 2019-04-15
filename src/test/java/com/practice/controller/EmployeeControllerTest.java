@@ -5,19 +5,30 @@ import com.practice.service.EmployeeService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class EmployeeControllerTest {
     EmployeeController employeeController;
     EmployeeService employeeService;
     Employee employee;
+
+    @Autowired
+    private MockMvc mvc;
+
     @Before
     public void SetUp(){
         employeeService = Mockito.mock(EmployeeService.class);
@@ -33,6 +44,9 @@ public class EmployeeControllerTest {
         verify(employeeService,times(   1)).save(employee);
         assertEquals(employee,employeeExpected);
     }
+
+
+
 
     @Test
     public void testFind(){
